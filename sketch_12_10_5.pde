@@ -1,16 +1,16 @@
 import controlP5.*;
-
+import peasy.*;
 int numSliders = 5;
 float[] sectionHeights = {10, 20, 30, 40, 50};
 float[] sectionRadii;
 int vaseColor;
 
 ControlP5 cp5;
-
+PeasyCam cam; 
 void setup() {
   size(600, 600, P3D);
   cp5 = new ControlP5(this);
-
+  cam = new PeasyCam(this, 500);
   sectionRadii = new float[numSliders];
   vaseColor = color(255, 0, 0);  // 初始颜色为红色
 
@@ -35,9 +35,6 @@ void draw() {
   lights();
   translate(width / 2, height / 2);
   rotateX(PI / 6);
-
-  // remove the line below to disable automatic rotation
-  // rotateY(frameCount * 0.01);
 
   drawVase();
 }
@@ -86,4 +83,46 @@ void controlEvent(ControlEvent theEvent) {
     }
     redraw();
   }
+}
+
+void keyPressed() {
+  if (key == 'a' || key == 'A') {
+    saveVaseAsObj("output.obj");
+  }
+}
+
+void saveVaseAsObj(String filename) {
+  PrintWriter objWriter = createWriter(filename);
+  objWriter.println("# Wavefront OBJ file");
+
+  int vertexCount = 1;
+  for (int i = 0; i < numSliders; i++) {
+    float currentHeight = sectionHeights[i];
+    float currentRadius = sectionRadii[i];
+
+    for (float angle = 0; angle <= TWO_PI; angle += 0.1) {
+      float x = currentRadius * cos(angle);
+      float y = currentRadius * sin(angle);
+      objWriter.println("v " + x + " " + y + " " + currentHeight);
+      vertexCount++;
+    }
+  }
+
+  vertexCount = 1;
+  for (int i = 0; i < numSliders - 1; i++) {
+    for (int j = 0; j < 36; j++) {
+      int v1 = vertexCount;
+      int v2 = (vertexCount % 360) + 1;
+      int v3 = ((vertexCount + 1) % 360) + 1;
+      int v4 = ((vertexCount + 360 - 1) % 360) + 1;
+
+      objWriter.println("f " + v1 + " " + v2 + " " + v3);
+      objWriter.println("f " + v1 + " " + v3 + " " + v4);
+      vertexCount++;
+    }
+  }
+
+  objWriter.flush();
+  objWriter.close();
+  println("Vase saved as " + filename);
 }
